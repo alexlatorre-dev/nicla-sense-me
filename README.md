@@ -16,8 +16,16 @@ This repository contains the Arduino firmware (`ble_full.ino`) for the **Nicla S
 
 ## Hardware Requirements
 
+
+
 - **Arduino Nicla Sense ME**
 - Micro-USB cable
+- **LiPo Battery**: 3.7V 150mAh (via JST connector) for portable operation.
+
+<p align="center">
+  <img src="assets/photo_2026-01-13_12-21-23_1.jpg" alt="Nicla Sense ME" width="300" />
+  <img src="assets/photo_2026-01-13_12-21-23_2.jpg" alt="Nicla with Battery" width="300" />
+</p>
 
 ## Dependencies
 
