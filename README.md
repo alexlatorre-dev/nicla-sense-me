@@ -12,6 +12,8 @@ This repository contains the Arduino firmware (`ble_full.ino`) for the **Nicla S
   - **Charging**: Green Slow Blink (High Priority).
   - **Fully Charged**: Solid Green (Highest Priority).
   - **Low Battery**: Red Rapid Blink.
+  - **Startup**: Red -> Green -> Blue Sequence (System Check).
+- **Remote Reset**: Reboot the board wirelessly via the Web Dashboard.
 - **Sensor Fallback**: Automatically switches to Accelerometer readings if the virtual Gravity sensor returns (0,0,0) (sensor idle/off).
 
 ## Hardware Requirements
@@ -171,6 +173,8 @@ This project is provided as-is for educational and development purposes.
 
 A web dashboard is available to visualize the sensor data. 
 The interface is located in the `docs` folder, making it ready for **GitHub Pages**.
+
+You can access the live example here: [https://alexlatorre-dev.github.io/nicla-sense-me/](https://alexlatorre-dev.github.io/nicla-sense-me/)
 
 <p align="center">
   <img src="assets/dashboard_image.png" alt="Web Dashboard Interface" width="600" />
