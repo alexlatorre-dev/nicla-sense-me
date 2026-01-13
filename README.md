@@ -170,14 +170,15 @@ This project is provided as-is for educational and development purposes.
 ## Web Interface
 
 A web dashboard is available to visualize the sensor data. 
-You can access the live example here: [https://loquacious-mousse-eb8d2b.netlify.app/](https://loquacious-mousse-eb8d2b.netlify.app/)
+The interface is located in the `docs` folder, making it ready for **GitHub Pages**.
 
 <p align="center">
   <img src="assets/dashboard_image.png" alt="Web Dashboard Interface" width="600" />
 </p>
 
-### Deployment
+### Deployment (GitHub Pages)
 
-To deploy the web interface to Netlify:
-1.  Drag and drop the www folder (containing index.html) to [app.netlify.com/drop](https://app.netlify.com/drop).
-2.  That's it!
+1.  Go to your GitHub repository **Settings**.
+2.  Navigate to the **Pages** section (sidebar).
+3.  Under **Build and deployment** > **Branch**, select `main` and choose the `/docs` folder.
+4.  Click **Save**. Your site will be live at `https://<your-username>.github.io/<repo-name>/`.
