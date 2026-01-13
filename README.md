@@ -172,6 +172,10 @@ This project is provided as-is for educational and development purposes.
 A web dashboard is available to visualize the sensor data. 
 You can access the live example here: [https://loquacious-mousse-eb8d2b.netlify.app/](https://loquacious-mousse-eb8d2b.netlify.app/)
 
+<p align="center">
+  <img src="assets/dashboard_image.png" alt="Web Dashboard Interface" width="600" />
+</p>
+
 ### Deployment
 
 To deploy the web interface to Netlify:
