@@ -174,7 +174,7 @@ This project is provided as-is for educational and development purposes.
 A web dashboard is available to visualize the sensor data. 
 The interface is located in the `docs` folder, making it ready for **GitHub Pages**.
 
-You can access the live example here: [https://alexlatorre-dev.github.io/nicla-sense-me/](https://alexlatorre-dev.github.io/nicla-sense-me/)
+You can access the live example here: [https://alexlatorre.github.io/nicla-sense-me/](https://alexlatorre.github.io/nicla-sense-me/)
 
 <p align="center">
   <img src="assets/dashboard_image.png" alt="Web Dashboard Interface" width="600" />
