@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nicla Sense ME - 3D Visualizer</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Import map for Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div id="overlay">
+        <nav class="nav-bar">
+            <a href="index.html" class="nav-link">Monitor Dashboard</a>
+            <a href="3dmodel.html" class="nav-link active">3D Visualizer</a>
+        </nav>
+
+        <header>
+            <div class="logo">
+                <div class="icon">Running...</div>
+                <h1>Nicla 3D</h1>
+            </div>
+            <div class="status-pill" id="connectionStatus">
+                <span class="dot"></span>
+                <span class="text">Disconnected</span>
+            </div>
+        </header>
+
+        <main>
+            <div class="controls-panel">
+                <div class="card">
+                    <h2>Devices</h2>
+                    <p>Connect your Nicla Sense ME to start visualizing motion.</p>
+                    <button id="connectBtn" class="btn-primary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+                            <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+                            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                            <line x1="12" y1="20" x2="12" y2="20"></line>
+                        </svg>
+                        Connect via Bluetooth
+                    </button>
+                    <button id="disconnectBtn" class="btn-secondary hidden">Disconnect</button>
+                </div>
+
+                <div class="card">
+                    <h2>Model</h2>
+                    
+                    <div class="input-group">
+                        <label for="exposureSlider">Lighting Intensity</label>
+                        <div class="slider-container">
+                            <input type="range" id="exposureSlider" min="0" max="3" step="0.1" value="0.7">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="modelSelect">Select Model</label>
+                        <select id="modelSelect" class="form-select">
+                            <option value="glb-3347.glb" selected>Nicla Sense ME</option>
+                            <option value="decorate-3101.glb">Decorate</option>
+                            <option value="ice-3077.glb">Ice</option>
+                            <option value="potion-bottle-3421.glb">Potion Bottle</option>
+                            <option value="robot-3332.glb">Robot</option>
+                            <option value="skull-potion-3558.glb">Skull Potion</option>
+                            <option value="wallet-3260.glb">Wallet</option>
+                            <option value="custom">Upload Custom...</option>
+                        </select>
+                    </div>
+
+                    <div class="upload-area hidden" id="dropZone">
+                        <input type="file" id="fileInput" accept=".glb,.gltf,.obj" hidden>
+                        <div class="upload-icon">📦</div>
+                        <span>Drag & Drop 3D Model</span>
+                        <small>Supports .glb, .gltf</small>
+                    </div>
+                </div>
+
+                <div class="card data-card hidden" id="dataCard">
+                    <h3>Sensor Data</h3>
+                    <div class="data-row">
+                        <span>Heading</span>
+                        <span id="valHeading" class="mono">0°</span>
+                    </div>
+                    <div class="data-row">
+                        <span>Pitch</span>
+                        <span id="valPitch" class="mono">0°</span>
+                    </div>
+                    <div class="data-row">
+                        <span>Roll</span>
+                        <span id="valRoll" class="mono">0°</span>
+                    </div>
+                </div>
+
+                <!-- Debug Console -->
+                <div class="card" style="margin-top: auto;">
+                    <h3>Debug Log</h3>
+                    <div id="console-log" class="console-box">Waiting for user...</div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            Built with Three.js & Web Bluetooth
+        </footer>
+    </div>
+
+    <!-- Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
