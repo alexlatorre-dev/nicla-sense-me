@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nicla Tilt Maze - Game</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --card: #12121a;
+            --text: #e0e0e0;
+            --accent: #00ffaa;
+            --accent-dim: #00aa77;
+            --danger: #ff4466;
+            --warn: #ffaa00;
+            --purple: #aa44ff;
+            --blue: #4488ff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Navigation Bar */
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            z-index: 1000;
+        }
+
+        .nav-link {
+            color: #888;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
+        .nav-link.active { color: var(--accent); background: rgba(0, 255, 170, 0.1); }
+
+        /* Main Layout */
+        .container {
+            display: flex;
+            height: 100vh;
+            padding-top: 60px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--card);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .card h2 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-connect {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+            color: #000;
+        }
+        .btn-connect:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0, 255, 170, 0.3); }
+
+        .btn-restart {
+            background: rgba(255,255,255,0.1);
+            color: var(--text);
+            margin-top: 10px;
+        }
+        .btn-restart:hover { background: rgba(255,255,255,0.15); }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .status-badge.disconnected { background: rgba(255,68,102,0.2); color: var(--danger); }
+        .status-badge.connected { background: rgba(0,255,170,0.2); color: var(--accent); }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Stats */
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .stat-row:last-child { border-bottom: none; }
+        .stat-label { color: #666; font-size: 0.85rem; }
+        .stat-value { font-weight: 700; font-family: 'Courier New', monospace; }
+        .stat-value.score { color: var(--warn); font-size: 1.2rem; }
+        .stat-value.level { color: var(--purple); }
+        .stat-value.coins { color: var(--accent); }
+
+        /* Tilt Display */
+        .tilt-display {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+
+        .tilt-item {
+            text-align: center;
+        }
+
+        .tilt-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        .tilt-label {
+            font-size: 0.7rem;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        /* Game Area */
+        .game-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        #gameCanvas {
+            border-radius: 16px;
+            box-shadow: 0 0 60px rgba(0, 255, 170, 0.15);
+        }
+
+        /* Overlays */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: opacity 0.5s;
+        }
+
+        .overlay.hidden { opacity: 0; pointer-events: none; }
+
+        .overlay h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--accent), var(--blue));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .overlay p {
+            font-size: 1.2rem;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .overlay .emoji {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+
+        /* Instructions */
+        .instructions {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: left;
+            max-width: 300px;
+            margin-top: 15px;
+        }
+
+        .instructions li {
+            margin: 8px 0;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-bar">
+        <a href="index.html" class="nav-link">Monitor Dashboard</a>
+        <a href="3dmodel.html" class="nav-link">3D Visualizer</a>
+        <a href="game.html" class="nav-link active">🎮 Tilt Game</a>
+    </nav>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="card">
+                <h2>🎮 Connection</h2>
+                <button id="connectBtn" class="btn btn-connect">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                        <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                        <circle cx="12" cy="20" r="1"/>
+                    </svg>
+                    Connect Nicla
+                </button>
+                <div id="statusBadge" class="status-badge disconnected">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Disconnected</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📊 Game Stats</h2>
+                <div class="stat-row">
+                    <span class="stat-label">Score</span>
+                    <span id="scoreDisplay" class="stat-value score">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Level</span>
+                    <span id="levelDisplay" class="stat-value level">1 / 3</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Coins</span>
+                    <span id="coinsDisplay" class="stat-value coins">0 / 0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Time</span>
+                    <span id="timeDisplay" class="stat-value">00:00</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📐 Tilt Sensor</h2>
+                <div class="tilt-display">
+                    <div class="tilt-item">
+                        <div id="pitchDisplay" class="tilt-value" style="color: var(--blue)">0°</div>
+                        <div class="tilt-label">Pitch</div>
+                    </div>
+                    <div class="tilt-item">
+                        <div id="rollDisplay" class="tilt-value" style="color: var(--purple)">0°</div>
+                        <div class="tilt-label">Roll</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: auto;">
+                <button id="restartBtn" class="btn btn-restart">🔄 Restart Level</button>
+            </div>
+        </aside>
+
+        <main class="game-area">
+            <canvas id="gameCanvas" width="700" height="500"></canvas>
+
+            <!-- Start Overlay -->
+            <div id="startOverlay" class="overlay">
+                <h1>🎮 Tilt Maze</h1>
+                <p>Control the ball with your Nicla Sense ME</p>
+                <button id="startBtn" class="btn btn-connect" style="width: auto; padding: 15px 40px;">
+                    ▶️ Start Game
+                </button>
+                <ul class="instructions">
+                    <li>🔌 Connect your Nicla via Bluetooth</li>
+                    <li>📐 Tilt to move the ball</li>
+                    <li>💰 Collect all coins</li>
+                    <li>🏁 Reach the green goal zone</li>
+                </ul>
+            </div>
+
+            <!-- Win Overlay -->
+            <div id="winOverlay" class="overlay hidden">
+                <div class="emoji">🎉</div>
+                <h1>Level Complete!</h1>
+                <p id="winMessage">Great job!</p>
+                <button id="nextLevelBtn" class="btn btn-connect" style="width: auto; padding: 15px 40px;">
+                    ➡️ Next Level
+                </button>
+            </div>
+
+            <!-- Game Complete Overlay -->
+            <div id="completeOverlay" class="overlay hidden">
+                <div class="emoji">🏆</div>
+                <h1>You Win!</h1>
+                <p id="finalScore">Final Score: 0</p>
+                <button id="playAgainBtn" class="btn btn-connect" style="width: auto; padding: 15px 40px;">
+                    🔄 Play Again
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ==================================================================
+        // CONFIGURATION
+        // ==================================================================
+        const SERVICE_UUID = "19b10000-0000-0000-0000-000000000000";
+        const UUID_ORIENTATION = "19b10001-0000-0000-0000-000000000000";
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // ==================================================================
+        // GAME STATE
+        // ==================================================================
+        let gameState = {
+            isConnected: false,
+            isPlaying: false,
+            currentLevel: 0,
+            score: 0,
+            startTime: null,
+            pitch: 0,
+            roll: 0
+        };
+
+        // Ball physics
+        let ball = {
+            x: 50,
+            y: 50,
+            vx: 0,
+            vy: 0,
+            radius: 12
+        };
+
+        const FRICTION = 0.98;      // Less friction = more sliding, smoother feel
+        const ACCELERATION = 0.04;  // Higher = faster response to tilt
+        const MAX_SPEED = 4;        // Max ball speed
+
+        // ==================================================================
+        // LEVEL DEFINITIONS (now empty - using procedural generation only)
+        // ==================================================================
+        const levels = [];
+
+        // ==================================================================
+        // PROCEDURAL LEVEL GENERATOR
+        // ==================================================================
+        function generateRandomLevel(levelNum) {
+            const difficulty = Math.min(levelNum, 15); // Cap difficulty at 15
+            const padding = 50;
+            const ballRadius = 12;
+            
+            // Random start position (left side)
+            const start = {
+                x: padding + ballRadius + Math.random() * 50,
+                y: padding + ballRadius + Math.random() * (canvas.height - padding * 2 - ballRadius * 2)
+            };
+            
+            // Random goal position (right side)
+            const goal = {
+                x: canvas.width - padding - 60,
+                y: padding + Math.random() * (canvas.height - padding * 2 - 60),
+                width: 60,
+                height: 60
+            };
+            
+            // Generate walls - more walls as difficulty increases
+            const numWalls = 3 + Math.floor(difficulty * 0.8);
+            const walls = [];
+            
+            for (let i = 0; i < numWalls; i++) {
+                const isVertical = Math.random() > 0.5;
+                let wall;
+                
+                if (isVertical) {
+                    const w = 20;
+                    const h = 100 + Math.random() * 200;
+                    const x = 100 + Math.random() * (canvas.width - 200);
+                    const y = Math.random() * (canvas.height - h);
+                    wall = { x, y, w, h };
+                } else {
+                    const w = 100 + Math.random() * 200;
+                    const h = 20;
+                    const x = Math.random() * (canvas.width - w);
+                    const y = 50 + Math.random() * (canvas.height - 100);
+                    wall = { x, y, w, h };
+                }
+                
+                // Make sure wall doesn't block start or goal
+                const blocksStart = circleRectCollision(start.x, start.y, ballRadius + 10, wall);
+                const blocksGoal = wall.x < goal.x + goal.width && wall.x + wall.w > goal.x &&
+                                   wall.y < goal.y + goal.height && wall.y + wall.h > goal.y;
+                
+                if (!blocksStart && !blocksGoal) {
+                    walls.push(wall);
+                }
+            }
+            
+            // Generate coins - more coins as difficulty increases
+            const numCoins = 4 + Math.floor(difficulty * 0.5);
+            const coins = [];
+            
+            for (let i = 0; i < numCoins; i++) {
+                let coin;
+                let attempts = 0;
+                let valid = false;
+                
+                while (!valid && attempts < 20) {
+                    coin = {
+                        x: 50 + Math.random() * (canvas.width - 100),
+                        y: 50 + Math.random() * (canvas.height - 100)
+                    };
+                    
+                    // Check coin is not inside a wall
+                    valid = true;
+                    for (const wall of walls) {
+                        if (coin.x > wall.x - 15 && coin.x < wall.x + wall.w + 15 &&
+                            coin.y > wall.y - 15 && coin.y < wall.y + wall.h + 15) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    attempts++;
+                }
+                
+                if (valid) {
+                    coins.push(coin);
+                }
+            }
+            
+            return { start, goal, walls, coins, isGenerated: true };
+        }
+
+        let currentLevelData = null;
+        let collectedCoins = [];
+
+        // ==================================================================
+        // BLE CONNECTION
+        // ==================================================================
+        document.getElementById('connectBtn').addEventListener('click', connectBLE);
+
+        async function connectBLE() {
+            try {
+                updateStatus('Connecting...', false);
+
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'Nicla' }],
+                    optionalServices: [SERVICE_UUID]
+                });
+
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+
+                // Subscribe to orientation
+                const charOrientation = await service.getCharacteristic(UUID_ORIENTATION);
+                await charOrientation.startNotifications();
+                charOrientation.addEventListener('characteristicvaluechanged', (e) => {
+                    const dv = e.target.value;
+                    gameState.pitch = dv.getFloat32(4, true); // Pitch is second float
+                    gameState.roll = dv.getFloat32(8, true);  // Roll is third float
+                    
+                    document.getElementById('pitchDisplay').textContent = Math.round(gameState.pitch) + '°';
+                    document.getElementById('rollDisplay').textContent = Math.round(gameState.roll) + '°';
+                });
+
+                gameState.isConnected = true;
+                updateStatus('Connected', true);
+
+                // Handle disconnect
+                device.addEventListener('gattserverdisconnected', () => {
+                    gameState.isConnected = false;
+                    updateStatus('Disconnected', false);
+                });
+
+            } catch (err) {
+                console.error(err);
+                updateStatus('Connection failed', false);
+            }
+        }
+
+        function updateStatus(text, connected) {
+            const badge = document.getElementById('statusBadge');
+            const statusText = document.getElementById('statusText');
+            badge.className = 'status-badge ' + (connected ? 'connected' : 'disconnected');
+            statusText.textContent = text;
+        }
+
+        // ==================================================================
+        // GAME LOGIC
+        // ==================================================================
+        function loadLevel(levelIndex) {
+            // Use predefined levels first, then generate random ones
+            if (levelIndex < levels.length) {
+                currentLevelData = levels[levelIndex];
+            } else {
+                currentLevelData = generateRandomLevel(levelIndex);
+            }
+            
+            gameState.currentLevel = levelIndex;
+            collectedCoins = [];
+
+            ball.x = currentLevelData.start.x;
+            ball.y = currentLevelData.start.y;
+            ball.vx = 0;
+            ball.vy = 0;
+
+            gameState.startTime = Date.now();
+            updateUI();
+        }
+
+        function startGame() {
+            document.getElementById('startOverlay').classList.add('hidden');
+            gameState.isPlaying = true;
+            gameState.score = 0;
+            loadLevel(0);
+            requestAnimationFrame(gameLoop);
+        }
+
+        function nextLevel() {
+            document.getElementById('winOverlay').classList.add('hidden');
+            // Always continue to next level - infinite mode!
+            loadLevel(gameState.currentLevel + 1);
+            gameState.isPlaying = true;
+        }
+
+        function showWin() {
+            gameState.isPlaying = false;
+            document.getElementById('winMessage').textContent = 
+                `Score: ${gameState.score} | Time: ${getTimeString()}`;
+            document.getElementById('winOverlay').classList.remove('hidden');
+        }
+
+        function showComplete() {
+            gameState.isPlaying = false;
+            document.getElementById('finalScore').textContent = `Final Score: ${gameState.score}`;
+            document.getElementById('completeOverlay').classList.remove('hidden');
+        }
+
+        function restartLevel() {
+            loadLevel(gameState.currentLevel);
+            gameState.isPlaying = true;
+        }
+
+        function playAgain() {
+            document.getElementById('completeOverlay').classList.add('hidden');
+            gameState.score = 0;
+            loadLevel(0);
+            gameState.isPlaying = true;
+        }
+
+        // ==================================================================
+        // PHYSICS & COLLISION
+        // ==================================================================
+        function updatePhysics() {
+            if (!gameState.isPlaying) return;
+
+            // Apply tilt acceleration
+            // Roll controls X (left/right tilt)
+            // Pitch controls Y (forward/back tilt)
+            ball.vx += gameState.roll * ACCELERATION;
+            ball.vy += gameState.pitch * ACCELERATION;
+
+            // Apply friction
+            ball.vx *= FRICTION;
+            ball.vy *= FRICTION;
+
+            // Clamp speed
+            ball.vx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, ball.vx));
+            ball.vy = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, ball.vy));
+
+            // Move ball
+            const newX = ball.x + ball.vx;
+            const newY = ball.y + ball.vy;
+
+            // Wall collision - frictionless sliding
+            let canMoveX = true;
+            let canMoveY = true;
+            
+            for (const wall of currentLevelData.walls) {
+                // Check X movement
+                if (circleRectCollision(newX, ball.y, ball.radius, wall)) {
+                    canMoveX = false;
+                    ball.vx = 0; // Stop perpendicular movement, no bounce/friction
+                }
+                // Check Y movement
+                if (circleRectCollision(ball.x, newY, ball.radius, wall)) {
+                    canMoveY = false;
+                    ball.vy = 0; // Stop perpendicular movement, no bounce/friction
+                }
+            }
+
+            // Apply movement for directions that are clear
+            if (canMoveX) {
+                ball.x = newX;
+            }
+            if (canMoveY) {
+                ball.y = newY;
+            }
+
+            // Canvas boundary
+            ball.x = Math.max(ball.radius, Math.min(canvas.width - ball.radius, ball.x));
+            ball.y = Math.max(ball.radius, Math.min(canvas.height - ball.radius, ball.y));
+
+            // Collect coins
+            for (let i = 0; i < currentLevelData.coins.length; i++) {
+                if (collectedCoins.includes(i)) continue;
+                const coin = currentLevelData.coins[i];
+                const dx = ball.x - coin.x;
+                const dy = ball.y - coin.y;
+                if (Math.sqrt(dx*dx + dy*dy) < ball.radius + 15) {
+                    collectedCoins.push(i);
+                    gameState.score += 100;
+                    updateUI();
+                }
+            }
+
+            // Check goal
+            const goal = currentLevelData.goal;
+            if (ball.x > goal.x && ball.x < goal.x + goal.width &&
+                ball.y > goal.y && ball.y < goal.y + goal.height) {
+                // Bonus for remaining time
+                gameState.score += 500;
+                showWin();
+            }
+        }
+
+        function circleRectCollision(cx, cy, r, rect) {
+            const closestX = Math.max(rect.x, Math.min(cx, rect.x + rect.w));
+            const closestY = Math.max(rect.y, Math.min(cy, rect.y + rect.h));
+            const dx = cx - closestX;
+            const dy = cy - closestY;
+            return (dx * dx + dy * dy) < (r * r);
+        }
+
+        // ==================================================================
+        // RENDERING
+        // ==================================================================
+        function render() {
+            // Clear canvas
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (!currentLevelData) return;
+
+            // Draw grid
+            ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Draw goal
+            const goal = currentLevelData.goal;
+            ctx.fillStyle = 'rgba(0, 255, 170, 0.3)';
+            ctx.strokeStyle = '#00ffaa';
+            ctx.lineWidth = 3;
+            ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
+            ctx.strokeRect(goal.x, goal.y, goal.width, goal.height);
+            
+            // Goal flag
+            ctx.font = '24px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🏁', goal.x + goal.width/2, goal.y + goal.height/2 + 8);
+
+            // Draw walls
+            for (const wall of currentLevelData.walls) {
+                // Glow effect
+                const gradient = ctx.createLinearGradient(wall.x, wall.y, wall.x + wall.w, wall.y + wall.h);
+                gradient.addColorStop(0, '#ff4466');
+                gradient.addColorStop(1, '#aa44ff');
+                
+                ctx.shadowColor = '#ff4466';
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = gradient;
+                ctx.fillRect(wall.x, wall.y, wall.w, wall.h);
+                ctx.shadowBlur = 0;
+            }
+
+            // Draw coins
+            for (let i = 0; i < currentLevelData.coins.length; i++) {
+                if (collectedCoins.includes(i)) continue;
+                const coin = currentLevelData.coins[i];
+                
+                // Coin glow
+                ctx.shadowColor = '#ffaa00';
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = '#ffaa00';
+                ctx.beginPath();
+                ctx.arc(coin.x, coin.y, 12, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Coin inner
+                ctx.fillStyle = '#ffdd66';
+                ctx.beginPath();
+                ctx.arc(coin.x, coin.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw ball trail
+            ctx.shadowColor = '#00ffaa';
+            ctx.shadowBlur = 20;
+            
+            // Ball glow
+            const ballGradient = ctx.createRadialGradient(
+                ball.x, ball.y, 0,
+                ball.x, ball.y, ball.radius
+            );
+            ballGradient.addColorStop(0, '#ffffff');
+            ballGradient.addColorStop(0.3, '#00ffaa');
+            ballGradient.addColorStop(1, '#00aa77');
+
+            ctx.fillStyle = ballGradient;
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Ball highlight
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.beginPath();
+            ctx.arc(ball.x - 3, ball.y - 3, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function updateUI() {
+            document.getElementById('scoreDisplay').textContent = gameState.score;
+            document.getElementById('levelDisplay').textContent = `Level ${gameState.currentLevel + 1} ∞`;
+            document.getElementById('coinsDisplay').textContent = 
+                `${collectedCoins.length} / ${currentLevelData ? currentLevelData.coins.length : 0}`;
+        }
+
+        function getTimeString() {
+            if (!gameState.startTime) return '00:00';
+            const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+            const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const secs = (elapsed % 60).toString().padStart(2, '0');
+            return `${mins}:${secs}`;
+        }
+
+        function gameLoop() {
+            updatePhysics();
+            render();
+            document.getElementById('timeDisplay').textContent = getTimeString();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ==================================================================
+        // EVENT LISTENERS
+        // ==================================================================
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('nextLevelBtn').addEventListener('click', nextLevel);
+        document.getElementById('playAgainBtn').addEventListener('click', playAgain);
+        document.getElementById('restartBtn').addEventListener('click', restartLevel);
+
+        // Keyboard fallback for testing without Nicla
+        document.addEventListener('keydown', (e) => {
+            if (!gameState.isConnected) {
+                const TILT = 15;
+                if (e.key === 'ArrowUp') gameState.pitch = -TILT;
+                if (e.key === 'ArrowDown') gameState.pitch = TILT;
+                if (e.key === 'ArrowLeft') gameState.roll = -TILT;
+                if (e.key === 'ArrowRight') gameState.roll = TILT;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (!gameState.isConnected) {
+                if (e.key === 'ArrowUp' || e.key === 'ArrowDown') gameState.pitch = 0;
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') gameState.roll = 0;
+            }
+        });
+
+        // Initial render
+        render();
+    </script>
+</body>
+</html>

@@ -65,7 +65,7 @@ Sensor pressure(SENSOR_ID_BARO);
 Sensor gas(SENSOR_ID_GAS);
 
 unsigned long previousMillisPrint = 0;  
-const long intervalPrint = 200; 
+const long intervalPrint = 50;  // 50ms = 20 updates/sec for smoother gameplay
 unsigned long ledTimer = 0;             
 byte batteryCode = 0; 
 
