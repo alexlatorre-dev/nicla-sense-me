@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nicla Gestures - Demo</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --card: #12121a;
+            --text: #e0e0e0;
+            --accent: #00ffaa;
+            --accent-dim: #00aa77;
+            --danger: #ff4466;
+            --warn: #ffaa00;
+            --purple: #aa44ff;
+            --blue: #4488ff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Navigation Bar */
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            z-index: 1000;
+        }
+
+        .nav-link {
+            color: #888;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
+        .nav-link.active { color: var(--accent); background: rgba(0, 255, 170, 0.1); }
+
+        /* Main Layout */
+        .container {
+            display: flex;
+            min-height: 100vh;
+            padding-top: 60px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--card);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .card h2 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-connect {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+            color: #000;
+        }
+        .btn-connect:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0, 255, 170, 0.3); }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .status-badge.disconnected { background: rgba(255,68,102,0.2); color: var(--danger); }
+        .status-badge.connected { background: rgba(0,255,170,0.2); color: var(--accent); }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        /* Gesture Display */
+        .gesture-display {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .gesture-icon {
+            font-size: 8rem;
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+
+        .gesture-icon.active {
+            animation: bounce 0.3s ease-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .gesture-name {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--accent), var(--blue));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gesture-hint {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        /* Tilt Indicators */
+        .tilt-indicators {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .tilt-indicator {
+            text-align: center;
+        }
+
+        .tilt-circle {
+            width: 120px;
+            height: 120px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .tilt-dot {
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 50%;
+            position: absolute;
+            transition: transform 0.1s;
+            box-shadow: 0 0 20px var(--accent);
+        }
+
+        .tilt-label {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .tilt-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-top: 5px;
+            font-family: monospace;
+        }
+
+        /* Gesture History */
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.85rem;
+        }
+
+        .history-icon {
+            font-size: 1.2rem;
+        }
+
+        .history-time {
+            color: #666;
+            font-size: 0.7rem;
+            margin-left: auto;
+        }
+
+        /* Waiting State */
+        .waiting {
+            text-align: center;
+            color: #666;
+        }
+
+        .waiting-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-bar">
+        <a href="index.html" class="nav-link">Monitor Dashboard</a>
+        <a href="3dmodel.html" class="nav-link">3D Visualizer</a>
+        <a href="game.html" class="nav-link">🎮 Tilt Game</a>
+        <a href="gestures.html" class="nav-link active">👋 Gestures</a>
+    </nav>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="card">
+                <h2>🔌 Connection</h2>
+                <button id="connectBtn" class="btn btn-connect">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                        <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                        <circle cx="12" cy="20" r="1"/>
+                    </svg>
+                    Connect Nicla
+                </button>
+                <div id="statusBadge" class="status-badge disconnected">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Disconnected</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📜 Gesture History</h2>
+                <div id="historyList" class="history-list">
+                    <div class="waiting">
+                        <div>No gestures yet</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📊 Raw Data</h2>
+                <div style="font-size: 0.8rem; font-family: monospace;">
+                    <div>Pitch: <span id="rawPitch">0°</span></div>
+                    <div>Roll: <span id="rawRoll">0°</span></div>
+                    <div>Accel: <span id="rawAccel">0 G</span></div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="gesture-display">
+                <div id="gestureIcon" class="gesture-icon">👋</div>
+                <div id="gestureName" class="gesture-name">Waiting...</div>
+                <div id="gestureHint" class="gesture-hint">Connect your Nicla and move it!</div>
+            </div>
+
+            <div class="tilt-indicators">
+                <div class="tilt-indicator">
+                    <div class="tilt-circle">
+                        <div id="tiltDotPitch" class="tilt-dot"></div>
+                    </div>
+                    <div class="tilt-label">Pitch (Forward/Back)</div>
+                    <div id="pitchValue" class="tilt-value">0°</div>
+                </div>
+                <div class="tilt-indicator">
+                    <div class="tilt-circle">
+                        <div id="tiltDotRoll" class="tilt-dot"></div>
+                    </div>
+                    <div class="tilt-label">Roll (Left/Right)</div>
+                    <div id="rollValue" class="tilt-value">0°</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ==================================================================
+        // CONFIGURATION
+        // ==================================================================
+        const SERVICE_UUID = "19b10000-0000-0000-0000-000000000000";
+        const UUID_ORIENTATION = "19b10001-0000-0000-0000-000000000000";
+        const UUID_ACCEL = "19b10013-0000-0000-0000-000000000000";
+
+        const SENSOR_SCALE = 4096.0;
+
+        // Gesture detection thresholds
+        const TILT_THRESHOLD = 25;      // degrees
+        const SHAKE_THRESHOLD = 2.5;    // G (total magnitude)
+        const MOVE_THRESHOLD = 0.4;     // G (single axis) - lower = more sensitive
+        const GESTURE_COOLDOWN = 500;   // ms between same gesture
+        const GESTURE_DISPLAY_TIME = 800; // ms to keep gesture visible
+
+        // ==================================================================
+        // STATE
+        // ==================================================================
+        let isConnected = false;
+        let pitch = 0, roll = 0, heading = 0;
+        let accelMag = 0;
+        let accelX = 0, accelY = 0, accelZ = 0;  // Individual axes for movement detection
+        let lastGesture = '';
+        let lastGestureTime = 0;
+        let gestureHistory = [];
+        let previousGravityZ = 0;
+
+        // ==================================================================
+        // GESTURE DEFINITIONS
+        // ==================================================================
+        const GESTURES = {
+            NONE: { icon: '👋', name: 'Neutral', hint: 'Move the Nicla to detect gestures' },
+            TILT_LEFT: { icon: '📱↩️', name: 'Tilt Left', hint: 'Rolling left detected' },
+            TILT_RIGHT: { icon: '📱↪️', name: 'Tilt Right', hint: 'Rolling right detected' },
+            TILT_FORWARD: { icon: '⬆️', name: 'Tilt Forward', hint: 'Pitching forward detected' },
+            TILT_BACK: { icon: '⬇️', name: 'Tilt Back', hint: 'Pitching backward detected' },
+            MOVE_LEFT: { icon: '👈', name: 'Move Left', hint: 'Horizontal movement left' },
+            MOVE_RIGHT: { icon: '👉', name: 'Move Right', hint: 'Horizontal movement right' },
+            MOVE_UP: { icon: '👆', name: 'Move Up', hint: 'Vertical movement up' },
+            MOVE_DOWN: { icon: '👇', name: 'Move Down', hint: 'Vertical movement down' },
+            MOVE_FORWARD: { icon: '👊', name: 'Move Forward', hint: 'Forward push detected' },
+            MOVE_BACK: { icon: '✋', name: 'Move Back', hint: 'Backward pull detected' },
+            SHAKE: { icon: '🫨', name: 'Shake!', hint: 'Shaking motion detected' },
+            FLIP: { icon: '🔄', name: 'Flip!', hint: 'Device flipped over' }
+        };
+
+        // ==================================================================
+        // BLE CONNECTION
+        // ==================================================================
+        document.getElementById('connectBtn').addEventListener('click', connectBLE);
+
+        async function connectBLE() {
+            try {
+                updateStatus('Connecting...', false);
+
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'Nicla' }],
+                    optionalServices: [SERVICE_UUID]
+                });
+
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+
+                // Subscribe to orientation
+                const charOrientation = await service.getCharacteristic(UUID_ORIENTATION);
+                await charOrientation.startNotifications();
+                charOrientation.addEventListener('characteristicvaluechanged', (e) => {
+                    const dv = e.target.value;
+                    heading = dv.getFloat32(0, true);
+                    pitch = dv.getFloat32(4, true);
+                    roll = dv.getFloat32(8, true);
+                    
+                    updateDisplay();
+                    detectGesture();
+                });
+
+                // Subscribe to accelerometer
+                const charAccel = await service.getCharacteristic(UUID_ACCEL);
+                await charAccel.startNotifications();
+                charAccel.addEventListener('characteristicvaluechanged', (e) => {
+                    const dv = e.target.value;
+                    accelX = dv.getFloat32(0, true) / SENSOR_SCALE;
+                    accelY = dv.getFloat32(4, true) / SENSOR_SCALE;
+                    accelZ = dv.getFloat32(8, true) / SENSOR_SCALE;
+                    
+                    accelMag = Math.sqrt(accelX*accelX + accelY*accelY + accelZ*accelZ);
+                    
+                    // Track gravity Z for flip detection
+                    previousGravityZ = accelZ;
+                    
+                    document.getElementById('rawAccel').textContent = accelMag.toFixed(2) + ' G';
+                    
+                    // Check movement gestures on accel update
+                    detectMovementGesture();
+                });
+
+                isConnected = true;
+                updateStatus('Connected', true);
+                showGesture('NONE');
+
+                // Handle disconnect
+                device.addEventListener('gattserverdisconnected', () => {
+                    isConnected = false;
+                    updateStatus('Disconnected', false);
+                });
+
+            } catch (err) {
+                console.error(err);
+                updateStatus('Connection failed', false);
+            }
+        }
+
+        function updateStatus(text, connected) {
+            const badge = document.getElementById('statusBadge');
+            const statusText = document.getElementById('statusText');
+            badge.className = 'status-badge ' + (connected ? 'connected' : 'disconnected');
+            statusText.textContent = text;
+        }
+
+        // ==================================================================
+        // DISPLAY UPDATE
+        // ==================================================================
+        function updateDisplay() {
+            // Update raw values
+            document.getElementById('rawPitch').textContent = Math.round(pitch) + '°';
+            document.getElementById('rawRoll').textContent = Math.round(roll) + '°';
+            document.getElementById('pitchValue').textContent = Math.round(pitch) + '°';
+            document.getElementById('rollValue').textContent = Math.round(roll) + '°';
+
+            // Update tilt dots (clamp to circle bounds)
+            const maxOffset = 40;
+            const pitchOffset = Math.max(-maxOffset, Math.min(maxOffset, pitch * 1.5));
+            const rollOffset = Math.max(-maxOffset, Math.min(maxOffset, roll * 1.5));
+
+            document.getElementById('tiltDotPitch').style.transform = 
+                `translate(-50%, -50%) translateY(${pitchOffset}px)`;
+            document.getElementById('tiltDotRoll').style.transform = 
+                `translate(-50%, -50%) translateX(${rollOffset}px)`;
+        }
+
+        // ==================================================================
+        // GESTURE DETECTION
+        // ==================================================================
+        function detectGesture() {
+            const now = Date.now();
+            let detected = 'NONE';
+
+            // Check for shake first (highest priority)
+            if (accelMag > SHAKE_THRESHOLD) {
+                detected = 'SHAKE';
+            }
+            // Check tilts (lower priority than movement)
+            else if (roll < -TILT_THRESHOLD) {
+                detected = 'TILT_LEFT';
+            }
+            else if (roll > TILT_THRESHOLD) {
+                detected = 'TILT_RIGHT';
+            }
+            else if (pitch < -TILT_THRESHOLD) {
+                detected = 'TILT_FORWARD';
+            }
+            else if (pitch > TILT_THRESHOLD) {
+                detected = 'TILT_BACK';
+            }
+
+            // Only trigger if gesture changed and cooldown passed
+            if (detected !== 'NONE' && (detected !== lastGesture || now - lastGestureTime > GESTURE_COOLDOWN)) {
+                showGesture(detected);
+                addToHistory(detected);
+                lastGesture = detected;
+                lastGestureTime = now;
+            } else if (detected === 'NONE' && lastGesture !== 'NONE' && now - lastGestureTime > GESTURE_DISPLAY_TIME) {
+                // Only return to neutral after display time has passed
+                showGesture('NONE');
+                lastGesture = 'NONE';
+            }
+        }
+
+        // Detect horizontal/vertical movement from acceleration spikes
+        function detectMovementGesture() {
+            const now = Date.now();
+            if (now - lastGestureTime < GESTURE_COOLDOWN) return;
+            
+            let detected = null;
+            
+            // Subtract gravity (approx 1G on Z when flat) to get linear acceleration
+            // X axis = left/right movement
+            // Y axis = up/down movement (device orientation dependent)
+            
+            // Horizontal movement (X axis)
+            if (accelX < -MOVE_THRESHOLD) {
+                detected = 'MOVE_LEFT';
+            } else if (accelX > MOVE_THRESHOLD) {
+                detected = 'MOVE_RIGHT';
+            }
+            // Vertical movement (Y axis)
+            else if (accelY > MOVE_THRESHOLD) {
+                detected = 'MOVE_UP';
+            } else if (accelY < -MOVE_THRESHOLD) {
+                detected = 'MOVE_DOWN';
+            }
+            // Forward/Back movement (Z axis) - subtract ~1G for gravity when flat
+            else if (accelZ > 1.0 + MOVE_THRESHOLD) {
+                detected = 'MOVE_FORWARD';
+            } else if (accelZ < 1.0 - MOVE_THRESHOLD) {
+                detected = 'MOVE_BACK';
+            }
+            
+            if (detected && detected !== lastGesture) {
+                showGesture(detected);
+                addToHistory(detected);
+                lastGesture = detected;
+                lastGestureTime = now;
+            }
+        }
+
+        function showGesture(gestureKey) {
+            const gesture = GESTURES[gestureKey];
+            const icon = document.getElementById('gestureIcon');
+            
+            icon.textContent = gesture.icon;
+            document.getElementById('gestureName').textContent = gesture.name;
+            document.getElementById('gestureHint').textContent = gesture.hint;
+
+            // Trigger animation
+            icon.classList.remove('active');
+            if (gestureKey !== 'NONE') {
+                setTimeout(() => icon.classList.add('active'), 10);
+            }
+        }
+
+        function addToHistory(gestureKey) {
+            const gesture = GESTURES[gestureKey];
+            const time = new Date().toLocaleTimeString();
+            
+            gestureHistory.unshift({
+                icon: gesture.icon,
+                name: gesture.name,
+                time: time
+            });
+
+            // Keep only last 10
+            if (gestureHistory.length > 10) {
+                gestureHistory.pop();
+            }
+
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            
+            if (gestureHistory.length === 0) {
+                list.innerHTML = '<div class="waiting"><div>No gestures yet</div></div>';
+                return;
+            }
+
+            list.innerHTML = gestureHistory.map(g => `
+                <div class="history-item">
+                    <span class="history-icon">${g.icon}</span>
+                    <span>${g.name}</span>
+                    <span class="history-time">${g.time}</span>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
